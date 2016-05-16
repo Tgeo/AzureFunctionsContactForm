@@ -10,26 +10,35 @@ using System.Text.RegularExpressions;
 private static readonly string _sendGridApiKey = Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
 private static readonly string _toEmail = Environment.GetEnvironmentVariable("TO_EMAIL");
 
-public static async Task<HttpResponseMessage> Run(HttpRequestMessage req)
+public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, TraceWriter log)
 {
     if (req.Method != HttpMethod.Post)
         return req.CreateResponse(HttpStatusCode.MethodNotAllowed, "Only POST is supported");
 
-    var postBody = await req.Content.ReadAsAsync<SendEmailPostBody>();
-    if (!postBody.IsValid)
-        return req.CreateResponse(HttpStatusCode.BadRequest);
+    try
+    {
+        // Request body must be of Content-Type: application/json. (Azure Functions limitation).
+        var postBody = await req.Content.ReadAsAsync<SendEmailPostBody>();
+        if (!postBody.IsValid)
+            return req.CreateResponse(HttpStatusCode.BadRequest);
 
-    var sendGridMessage = new SendGridMessage();
-    sendGridMessage.From = new MailAddress(postBody.Email);
-    sendGridMessage.AddTo(_toEmail);
-    sendGridMessage.Subject = "An email from your contact form";
-    sendGridMessage.Html = $"Name: {postBody.Name}<br>" +
-        $"Email: {postBody.Email}<br><br>" +
-        postBody.Text;
+        var sendGridMessage = new SendGridMessage();
+        sendGridMessage.From = new MailAddress(postBody.Email);
+        sendGridMessage.AddTo(_toEmail);
+        sendGridMessage.Subject = "An email from your contact form";
+        sendGridMessage.Html = $"Name: {postBody.Name}<br>" +
+            $"Email: {postBody.Email}<br><br>" +
+            postBody.Text;
 
-    var sendGridWebTransport = new Web(_sendGridApiKey);
-    await sendGridWebTransport.DeliverAsync(sendGridMessage);
-    return req.CreateResponse(HttpStatusCode.NoContent);
+        var sendGridWebTransport = new Web(_sendGridApiKey);
+        await sendGridWebTransport.DeliverAsync(sendGridMessage);
+        return req.CreateResponse(HttpStatusCode.NoContent);
+    }
+    catch (Exception ex)
+    {
+        log.Info(ex.ToString());
+        return req.CreateResponse(HttpStatusCode.InternalServerError);
+    }
 }
 
 public class SendEmailPostBody

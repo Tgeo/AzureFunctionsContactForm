@@ -24,29 +24,42 @@ namespace Server
         /// </summary>
         /// <remarks>
         /// Some annoyances: Azure Functions expect a ".csx" file -- which is a C# "script" file.
-        /// Intellisense support for these files is lacking, so this is just part of a class for now
+        /// Intellisense support for these files is lacking, so this function lives inside a class for now
         /// and the body of the Run() method is manually pasted into the Function app via Azure portal.
         /// </remarks>
-        public static async Task<HttpResponseMessage> Run(HttpRequestMessage req)
+        /// <param name="log">
+        /// Type of TraceWriter (see SendEmailFunction.CSX's log paramter). Dynamic to keep the code uniform
+        /// between the .CS and .CSX file.
+        /// </param>
+        public static async Task<HttpResponseMessage> Run(HttpRequestMessage req, dynamic log)
         {
             if (req.Method != HttpMethod.Post)
-                return req.CreateResponse(HttpStatusCode.MethodNotAllowed, "Only POST is supported");  
-                      
-            var postBody = await req.Content.ReadAsAsync<SendEmailPostBody>();            
-            if (!postBody.IsValid)
-                return req.CreateResponse(HttpStatusCode.BadRequest);
+                return req.CreateResponse(HttpStatusCode.MethodNotAllowed, "Only POST is supported");
 
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.From = new MailAddress(postBody.Email);
-            sendGridMessage.AddTo(_toEmail);
-            sendGridMessage.Subject = "An email from your contact form";
-            sendGridMessage.Html = $"Name: {postBody.Name}<br>" +
-                $"Email: {postBody.Email}<br><br>" +
-                postBody.Text;
-            
-            var sendGridWebTransport = new Web(_sendGridApiKey);
-            await sendGridWebTransport.DeliverAsync(sendGridMessage);
-            return req.CreateResponse(HttpStatusCode.NoContent);
+            try
+            {
+                // Request body must be of Content-Type: application/json. (Azure Functions limitation).
+                var postBody = await req.Content.ReadAsAsync<SendEmailPostBody>();
+                if (!postBody.IsValid)
+                    return req.CreateResponse(HttpStatusCode.BadRequest);
+
+                var sendGridMessage = new SendGridMessage();
+                sendGridMessage.From = new MailAddress(postBody.Email);
+                sendGridMessage.AddTo(_toEmail);
+                sendGridMessage.Subject = "An email from your contact form";
+                sendGridMessage.Html = $"Name: {postBody.Name}<br>" +
+                    $"Email: {postBody.Email}<br><br>" +
+                    postBody.Text;
+
+                var sendGridWebTransport = new Web(_sendGridApiKey);
+                await sendGridWebTransport.DeliverAsync(sendGridMessage);
+                return req.CreateResponse(HttpStatusCode.NoContent);
+            }
+            catch (Exception ex)
+            {
+                log.Info(ex.ToString());
+                return req.CreateResponse(HttpStatusCode.InternalServerError);
+            }
         }
     }
 

@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Example Contact Form</title>
+    <script src="https://code.jquery.com/jquery-2.2.3.min.js"
+            integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo="
+            crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        (function () {
+            // Get this from the Azure Functions blade.
+            var functionUrl = "https://functionstester.azurewebsites.net/api/ContactFormFunction";
+
+            $(document).ready(function () {
+
+                $('#contactForm').submit(function (event) {
+
+                    event.preventDefault();
+                    $(':submit').prop('disabled', true);
+                    $.ajax({
+                        url: functionUrl,
+                        type: 'POST',
+                        data: JSON.stringify(getFormData($('#contactForm'))),
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        success: postSuccess,
+                        error: postFailure
+                    });
+                });
+
+            });
+
+            function postSuccess(data) {
+                $(':submit').prop('disabled', false);
+                $(':submit').after('<p>Message received, thanks!</p>');
+            }
+
+            function postFailure(data) {
+                $(':submit').prop('disabled', false);
+                if (data.responseText)
+                    $(':submit').after('<p>Something went wrong: ' + data.responseText + '</p>');
+                else
+                    $(':submit').after('<p>Something went wrong. Make sure all fields are filled out.</p>');
+            }
+
+            function getFormData($form) {
+                var data = {};
+                $form.serializeArray().map(function (x) { data[x.name] = x.value; });
+                return data;
+            }
+        })();
+    </script>
+</head>
+<body>
+    <h1>Example Contact Form</h1>
+
+    <!-- Drop this form (and the accompanying javascript above) into a web-page -->
+    <form id="contactForm">
+        <input placeholder="Name" type="text" name="name" style="width: 250px;" /><br />
+        <input placeholder="Email" type="email" name="email" style="width: 250px;" /><br />
+        <textarea name="text" rows="5" style="width: 250px;"></textarea><br />
+        <input type="submit" value="Contact Me" />
+    </form>
+</body>
+</html>
