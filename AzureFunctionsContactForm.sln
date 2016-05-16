@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{99C71044-3B86-47B2-A4BB-EE255BE6B1AA}"
 	ProjectSection(SolutionItems) = preProject
 		Client\client.html = Client\client.html
+		Client\sendEmail.js = Client\sendEmail.js
 	EndProjectSection
 EndProject
 Global
