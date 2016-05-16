@@ -1,0 +1,10 @@
+﻿/* See: http://stackoverflow.com/questions/36411536/how-can-i-use-nuget-packages-in-my-azure-functions. */
+{
+  "frameworks": {
+    "net46": {
+      "dependencies": {
+        "Sendgrid": "6.3.4"
+      }
+    }
+  }
+}
