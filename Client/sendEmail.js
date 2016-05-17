@@ -9,7 +9,11 @@
         $('#contactForm').submit(function (event) {
 
             event.preventDefault();
-            $(':submit').prop('disabled', true);
+
+            var $submitButton = $('#submitContactFormButton');
+            $submitButton.prop('value', "Please wait...");
+            $submitButton.prop('disabled', true);
+
             $.ajax({
                 url: functionUrl,
                 type: 'POST',
@@ -24,16 +28,20 @@
     });
 
     function postSuccess(data) {
-        $(':submit').prop('disabled', false);
-        $(':submit').after('<p>Message received, thanks!</p>');
+        var $submitButton = $('#submitContactFormButton');
+        $submitButton.prop('value', "Contact Me");
+        $submitButton.prop('disabled', false);
+        $('#submitContactFormButton').after('<p>Message received, thanks!</p>');
     }
 
     function postFailure(data) {
-        $(':submit').prop('disabled', false);
+        var $submitButton = $('#submitContactFormButton');
+        $submitButton.prop('value', "Contact Me");
+        $submitButton.prop('disabled', false);
         if (data.responseText)
-            $(':submit').after('<p>Something went wrong: ' + data.responseText + '</p>');
+            $submitButton.after('<p>Something went wrong: ' + data.responseText + '</p>');
         else
-            $(':submit').after('<p>Something went wrong. Make sure all fields are filled out.</p>');
+            $submitButton.after('<p>Something went wrong. Make sure all fields are populated.</p>');
     }
 
     function getFormData($form) {
